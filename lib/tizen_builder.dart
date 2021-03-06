@@ -112,7 +112,7 @@ class TizenBuilder {
       processManager: globals.processManager,
     );
 
-    Target target;
+    PackageTpk target;
     if (tizenProject.isDotnet) {
       target = buildInfo.mode.isJit
           ? DebugDotnetTpk(project, tizenBuildInfo)
@@ -137,6 +137,14 @@ class TizenBuilder {
         }
         throwToolExit('The build failed.');
       }
+
+      // Since Tizen shares the host app directory between different build modes,
+      // we must package tpk file after [FlutterBuildSystem] has finished 
+      // compiling binaries and setting the 'PROJECT_ROOT/tizen' directory to
+      // the appropriate build mode. The clean-up between different build mode
+      // runs at the last step of the build. See [trackSharedBuildDirectory] in
+      // `build_system.dart`
+      await target.runPackaging(environment);
 
       if (buildInfo.performanceMeasurementFile != null) {
         final File outFile =
