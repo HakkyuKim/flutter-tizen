@@ -308,7 +308,8 @@ abstract class DotnetTpk extends Target {
     // TODO(swift-kim): Apply the profile during .NET build for efficiency.
     // Password descryption by secret-tool will be needed for full automation.
     if (buildInfo.securityProfile?.isEmpty ?? true) {
-      environment.logger.printStatus('The active profile is used for signing.');
+      final String profileName = tizenSdk.certificateProfiles?.activeProfileName ?? 'default';
+      environment.logger.printStatus('The $profileName profile is used for signing.');
     }
     result = await _processUtils.run(<String>[
       tizenSdk.tizenCli.path,
