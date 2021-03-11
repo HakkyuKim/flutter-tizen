@@ -75,7 +75,7 @@ void main() {
   );
 
   testUsingTizenContext(
-    'does not re-invoke build if nothing has changed',
+    'does not rebuild if nothing has changed',
     () async {
       final String flutterProject = await createTizenProject(
         tempDir,
@@ -108,7 +108,7 @@ void main() {
   );
 
   testUsingTizenContext(
-    'removing tpk triggers new build',
+    'removing tpk rebuilds',
     () async {
       final String flutterProject = await createTizenProject(
         tempDir,
@@ -141,7 +141,7 @@ void main() {
   );
 
   testUsingTizenContext(
-    'alterting between build modes',
+    'alterting build modes rebuilds',
     () async {
       final String flutterProject = await createTizenProject(
         tempDir,
@@ -201,7 +201,7 @@ void main() {
   );
 
   testUsingTizenContext(
-    'rebuild when active certificate changes',
+    'changing security profile rebuilds',
     () async {
       final String flutterProject = await createTizenProject(
         tempDir,
@@ -315,7 +315,7 @@ void main() {
   );
 
   testUsingTizenContext(
-    'app source rebuild on pub get',
+    'chaning app source rebuilds',
     () async {
       final String flutterProject = await createTizenProject(
         tempDir,
@@ -353,7 +353,7 @@ void main(){
   // which contains a timestamp that is always rewritten before build.
   // (TODO: HakkyuKim) Actually build plugin
   testUsingTizenContext(
-    'plugins always rebuild',
+    'TizenPlugins always rebuild',
     () async {
       final String flutterProject = await createTizenProject(
         tempDir,

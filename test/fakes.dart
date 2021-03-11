@@ -116,8 +116,7 @@ class FakeFlutterBuildSystem extends FlutterBuildSystem {
   }
 
   @override
-  Future<BuildResult> build(
-      covariant TizenPackager target, Environment environment,
+  Future<BuildResult> build(Target target, Environment environment,
       {BuildSystemConfig buildSystemConfig = const BuildSystemConfig()}) async {
     BuildResult buildResult;
 
@@ -134,7 +133,9 @@ class FakeFlutterBuildSystem extends FlutterBuildSystem {
         buildSystemConfig: buildSystemConfig,
       );
 
-      await fakeDotnetTpk.package(environment);
+      if(!fakeDotnetTpk.isTpkCached){
+        await fakeDotnetTpk.package(environment);
+      }
     } else {
       throw Exception(
           '${target.runtimeType} currently has no fake classes, and should not be used in testing.');
