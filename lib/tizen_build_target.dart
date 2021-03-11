@@ -300,7 +300,7 @@ abstract class DotnetTpk extends TizenPackage {
     final File tizenPluginsDep =
         environment.buildDir.childFile('tizen_plugins.d');
     if (tizenPluginsDep.existsSync()) {
-      final Depfile tizenPlugins = depfileService.parse(flutterAssetsDep);
+      final Depfile tizenPlugins = depfileService.parse(tizenPluginsDep);
       inputs.addAll(tizenPlugins.outputs);
     }
 
