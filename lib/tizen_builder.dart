@@ -112,16 +112,9 @@ class TizenBuilder {
       processManager: globals.processManager,
     );
 
-    Target target;
-    if (tizenProject.isDotnet) {
-      target = buildInfo.mode.isJit
-          ? DebugDotnetTpk(project, tizenBuildInfo)
-          : ReleaseDotnetTpk(project, tizenBuildInfo);
-    } else {
-      target = buildInfo.mode.isJit
-          ? DebugNativeTpk(project, tizenBuildInfo)
-          : ReleaseNativeTpk(project, tizenBuildInfo);
-    }
+    final Target target = buildInfo.mode.isJit
+        ? DebugApplicationBundle(project, tizenBuildInfo)
+        : ReleaseApplicationBundle(project, tizenBuildInfo);
 
     final String buildModeName = getNameForBuildMode(buildInfo.mode);
     final Status status = globals.logger.startProgress(
@@ -136,6 +129,18 @@ class TizenBuilder {
           globals.printError(measurement.exception.toString());
         }
         throwToolExit('The build failed.');
+      }
+
+      if (tizenProject.isDotnet) {
+        await buildDotnetTpk(
+            project: project,
+            buildInfo: tizenBuildInfo,
+            environment: environment);
+      } else {
+        await buildNativeTpk(
+            project: project,
+            buildInfo: tizenBuildInfo,
+            environment: environment);
       }
 
       if (buildInfo.performanceMeasurementFile != null) {
