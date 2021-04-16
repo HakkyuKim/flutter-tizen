@@ -72,6 +72,27 @@ class TizenLibrary {
 
   Map<String, String> _properties;
 
+  List<String> getUserLibrariesAsAbsolutePaths(String arch) {
+    final List<String> libDirPaths = getPropertyAsAbsolutePaths('USER_LIB_DIRS')
+        .map((String path) => path.replaceAll(r'${BUILD_ARCH}', arch))
+        .toList();
+    // currently can't support multiple lib directory paths
+    // TODO(HAKKYUKIM): alert with a helpful message
+    assert(libDirPaths.length <= 1);
+    final String libDir = libDirPaths.first;
+    final String libNames = getProperty('USER_LIBS');
+    if (libNames == null) {
+      return <String>[];
+    }
+
+    final List<String> paths = <String>[];
+    for (final String libName in libNames.split(' ')) {
+      paths.add(
+          globals.fs.path.normalize(globals.fs.path.join(libDir, libName)));
+    }
+    return paths;
+  }
+
   String getProperty(String key) {
     if (_properties == null) {
       if (!isValid) {
@@ -86,6 +107,7 @@ class TizenLibrary {
         }
         final String key = match.group(1);
         final String value = match.group(2).trim();
+
         _properties[key] = value;
       }
     }

@@ -672,6 +672,8 @@ class NativeTpk {
 
     final List<String> userIncludes = <String>[];
     final List<String> userSources = <String>[];
+    final List<String> userLibs = <String>[];
+    final List<String> extraOptions = <String>[];
 
     final List<TizenPlugin> nativePlugins =
         await findTizenPlugins(project, nativeOnly: true);
@@ -683,6 +685,22 @@ class NativeTpk {
       // plugin builds.
       userIncludes.addAll(library.getPropertyAsAbsolutePaths('USER_INC_DIRS'));
       userSources.addAll(library.getPropertyAsAbsolutePaths('USER_SRCS'));
+
+      // copy USER_LIBS to the output directory
+      userLibs.addAll(library.getUserLibrariesAsAbsolutePaths(targetArch));
+
+      extraOptions.addAll(library
+          .getProperty('USER_LFLAGS')
+          .split(' ')
+          .where((String element) => element.trim().isNotEmpty));
+    }
+
+    for (final String libPath in userLibs) {
+      final File userLib = environment.fileSystem.file(libPath);
+      if (!userLib.existsSync()) {
+        // do what?
+      }
+      userLib.copySync(tizenDir.childFile(userLib.basename).path);
     }
 
     final Directory commonDir = engineDir.parent.childDirectory('common');
@@ -696,7 +714,8 @@ class NativeTpk {
     final Map<String, String> variables = <String, String>{
       'USER_SRCS': userSources.join(' '),
     };
-    final List<String> extraOptions = <String>[
+
+    extraOptions.addAll(<String>[
       '-lflutter_tizen',
       '-L${libDir.path}',
       '-I${clientWrapperDir.childDirectory('include').path}',
@@ -704,7 +723,9 @@ class NativeTpk {
       ...userIncludes.map((String p) => '-I' + p),
       '-D${buildInfo.deviceProfile.toUpperCase()}_PROFILE',
       '-Wl,-unresolved-symbols=ignore-in-shared-libs',
-    ];
+    ]);
+
+    // dart remove duplicates
 
     // Run native build.
     if (tizenSdk == null || !tizenSdk.tizenCli.existsSync()) {
