@@ -1,0 +1,19 @@
+name: app
+description: A sample app that uses hello plugin
+publish_to: 'none'
+version: 1.0.0
+
+environment:
+  sdk: ">=2.12.0 <3.0.0"
+  flutter: ">=2.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  hello:
+    path: ../hello
+  hello_platform_windows:
+    path: ../hello_platform_windows
+
+flutter:
+  uses-material-design: true
