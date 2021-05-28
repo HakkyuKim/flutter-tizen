@@ -177,7 +177,7 @@ class TizenBuilder {
         aotSnapshot: codeSizeFile,
         outputDirectory: tpkDir.childDirectory('tpkroot'),
         precompilerTrace: precompilerTrace,
-        type: 'linux',
+        type: globals.platform.operatingSystem,
       );
       final File outputFile = globals.fsUtils.getUniqueFile(
         globals.fs
