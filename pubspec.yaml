@@ -8,6 +8,7 @@ environment:
   sdk: ">=2.7.0 <3.0.0"
 
 dependencies:
+  archive:
   flutter_tools:
     path: flutter/packages/flutter_tools
   file: # inherit from flutter_tools

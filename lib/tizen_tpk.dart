@@ -5,6 +5,7 @@
 import 'dart:io';
 
 import 'package:file/file.dart';
+import 'package:archive/archive.dart';
 import 'package:flutter_tools/src/application_package.dart';
 import 'package:flutter_tools/src/base/common.dart';
 import 'package:flutter_tools/src/base/terminal.dart';
@@ -52,10 +53,35 @@ class TizenTpk extends ApplicationPackage {
   })  : assert(file != null),
         super(id: manifest?.packageId);
 
+  /// Tpk Files zipped by build-task-tizen on Windows are not compatible with 
+  /// PKWARE's .ZIP File Format Specification("version made by" field in "central directory header").
+  /// See https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT for details.
+  /// 
+  /// See: [_WindowsUtils._unpackArchive] in `os.dart`
+  static void unzip(File file, Directory targetDirectory) {
+    if (globals.os.hostPlatform == HostPlatform.windows_x64) {
+      final Archive archive = ZipDecoder().decodeBytes(file.readAsBytesSync());
+      for (final ArchiveFile archiveFile in archive) {
+        if (!archiveFile.name.endsWith('/')) {
+          final File destFile = globals.fs.file(globals.fs.path.join(
+            targetDirectory.path,
+            archiveFile.name,
+          ));
+          if (!destFile.parent.existsSync()) {
+            destFile.parent.createSync(recursive: true);
+          }
+          destFile.writeAsBytesSync(archiveFile.content as List<int>);
+        }
+      }
+    } else {
+      globals.os.unzip(file, targetDirectory);
+    }
+  }
+
   static Future<TizenTpk> fromTpk(File tpkFile) async {
     final Directory tempDir = globals.fs.systemTempDirectory.createTempSync();
     try {
-      globals.os.unzip(tpkFile, tempDir);
+      unzip(tpkFile, tempDir);
     } on ProcessException {
       throwToolExit(
         'An error occurred while processing a file: ${globals.fs.path.relative(tpkFile.path)}\n'

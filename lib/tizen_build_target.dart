@@ -735,7 +735,7 @@ class NativeTpk {
     outputTpk.copySync(outputDir.childFile(tizenProject.outputTpkName).path);
 
     // Extract the contents of the tpk to support code size analysis.
-    globals.os.unzip(outputTpk, outputDir.childDirectory('tpkroot'));
+    TizenTpk.unzip(outputTpk, outputDir.childDirectory('tpkroot'));
   }
 }
 
