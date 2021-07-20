@@ -21,6 +21,7 @@ import 'package:flutter_tools/src/convert.dart';
 import 'package:flutter_tools/src/device.dart';
 import 'package:flutter_tools/src/device_port_forwarder.dart';
 import 'package:flutter_tools/src/globals.dart' as globals;
+import 'package:flutter_tools/src/ios/devices.dart';
 import 'package:flutter_tools/src/project.dart';
 import 'package:flutter_tools/src/protocol_discovery.dart';
 import 'package:meta/meta.dart';
@@ -542,9 +543,15 @@ class TizenDevice extends Device {
 
 /// A log reader that reads from `sdb dlog`.
 ///
-/// Source: [AdbLogReader] in `android_device.dart`
+/// See [AdbLogReader] in `android_device.dart`
+/// and [IOSDeviceLogReader] in `devices.dart`
 class TizenDlogReader extends DeviceLogReader {
-  TizenDlogReader._(this.name, this._device, this._sdbProcess, this._after) {
+  TizenDlogReader._(
+    this.name,
+    this._device,
+    this._processManager,
+    this._after,
+  ) {
     _linesController = StreamController<String>.broadcast(
       onListen: _start,
       onCancel: _stop,
@@ -556,19 +563,18 @@ class TizenDlogReader extends DeviceLogReader {
     ProcessManager processManager, {
     DateTime after,
   }) async {
-    // `sdb dlog -m` is not allowed for non-root users.
-    final List<String> args = device.usesSecureProtocol
-        ? <String>['shell', '0', 'showlog_level', 'time']
-        : <String>['dlog', '-v', 'time', 'ConsoleMessage'];
-
-    final Process process = await processManager.start(device.sdbCommand(args));
-
-    return TizenDlogReader._(device.name, device, process, after);
+    return TizenDlogReader._(
+      device.name,
+      device,
+      processManager,
+      after,
+    );
   }
 
   final TizenDevice _device;
-  final Process _sdbProcess;
+  final ProcessManager _processManager;
   final DateTime _after;
+  Process _sdbProcess;
 
   @override
   final String name;
@@ -579,20 +585,28 @@ class TizenDlogReader extends DeviceLogReader {
   Stream<String> get logLines => _linesController.stream;
 
   void _start() {
-    const Utf8Decoder decoder = Utf8Decoder(reportErrors: false);
-    _sdbProcess.stdout
-        .transform<String>(decoder)
-        .transform<String>(const LineSplitter())
-        .listen(_onLine);
-    _sdbProcess.stderr
-        .transform<String>(decoder)
-        .transform<String>(const LineSplitter())
-        .listen(_onLine);
-    unawaited(_sdbProcess.exitCode.whenComplete(() {
-      if (_linesController.hasListener) {
-        _linesController.close();
-      }
-    }));
+    // `sdb dlog -m` is not allowed for non-root users.
+    final List<String> args = _device.usesSecureProtocol
+        ? <String>['shell', '0', 'showlog_level', 'time']
+        : <String>['dlog', '-v', 'time', 'ConsoleMessage'];
+
+    _processManager.start(_device.sdbCommand(args)).then((Process sdbProcess) {
+      _sdbProcess = sdbProcess;
+      const Utf8Decoder decoder = Utf8Decoder(reportErrors: false);
+      sdbProcess.stdout
+          .transform<String>(decoder)
+          .transform<String>(const LineSplitter())
+          .listen(_onLine);
+      sdbProcess.stderr
+          .transform<String>(decoder)
+          .transform<String>(const LineSplitter())
+          .listen(_onLine);
+      unawaited(sdbProcess.exitCode.whenComplete(() {
+        if (_linesController.hasListener) {
+          _linesController.close();
+        }
+      }));
+    });
   }
 
   // '00-00 00:00:00.000+0000 '
@@ -657,10 +671,7 @@ class TizenDlogReader extends DeviceLogReader {
     }
   }
 
-  void _stop() {
-    _linesController.close();
-    _sdbProcess?.kill();
-  }
+  void _stop() => _sdbProcess?.kill();
 
   @override
   void dispose() {
